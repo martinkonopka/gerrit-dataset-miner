@@ -31,9 +31,9 @@ public class Main {
 
 
         GerritRestApiFactory gerritRestApiFactory = new GerritRestApiFactory();
-    //    GerritAuthData.Basic authData = new GerritAuthData.Basic("https://android-review.googlesource.com/");
-// or: authData = new GerritAuthData.Basic("https://example.com/gerrit", "user", "password"");
-            GerritAuthData.Basic authData = new GerritAuthData.Basic("https://git.eclipse.org/r/");
+	// or: authData = new GerritAuthData.Basic("https://example.com/gerrit", "user", "password"");
+        GerritAuthData.Basic authData = new GerritAuthData.Basic("https://git.eclipse.org/r/");
+    	//    GerritAuthData.Basic authData = new GerritAuthData.Basic("https://android-review.googlesource.com/");
 
         GerritApi gerritApi = gerritRestApiFactory.create(authData);
         String connectionString = "sqlserver://localhost;databaseName=eclipse-gerrit-dataset;integratedSecurity=true;";
@@ -51,9 +51,7 @@ public class Main {
             projects.prepare();
             accounts.prepare();
 
-           // ProjectDto project = projects.getProject();//"osee%2Forg.eclipse.osee");
-//            ProjectDto project = projects.getProject("platform%2Fpackages%2Fapps%2FSettings");
-            changes.get(20001, 20, 100000, 1000);
+            changes.get(0, 20, 100000, 1000);
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
