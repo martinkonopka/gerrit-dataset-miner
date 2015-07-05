@@ -4,27 +4,33 @@ import com.google.gerrit.extensions.api.GerritApi;
 import com.google.gerrit.extensions.common.AccountInfo;
 import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.Url;
-import konopka.gerrit.data.AccountDto;
+import konopka.gerrit.data.entities.AccountDto;
 import konopka.gerrit.data.IAccountsRepository;
 import konopka.gerrit.data.cache.AccountsCache;
+import konopka.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by Martin on 27.6.2015.
  */
 public class AccountsClient {
+    private static final Logger logger = LoggerFactory.getLogger(AccountsClient.class);
 
     private GerritApi api;
     private final IAccountsRepository repo;
     private final AccountsCache cache;
+    private final WaitCaller caller;
 
-    public AccountsClient(GerritApi api, IAccountsRepository repo) {
+    public AccountsClient(GerritApi api, WaitCaller caller, IAccountsRepository repo) {
         this.api = api;
         this.repo = repo;
-        this.cache = new AccountsCache(repo);
+        this.caller = caller;
+        this.cache = new AccountsCache();
     }
 
     public void prepare() {
-        cache.restore();
+        cache.restore(repo.getAll());
     }
 
     public AccountDto get(String name, String email) {
@@ -32,7 +38,6 @@ public class AccountsClient {
         if (account != null) {
             return account;
         }
-
 
         AccountInfo info = getAccountInfo(email);
         if (info == null) {
@@ -53,9 +58,9 @@ public class AccountsClient {
     protected AccountInfo getAccountInfo(String id) {
         AccountInfo info = null;
         try {
-            info = api.accounts().id(id).get();
-        } catch (RestApiException e) {
-            System.out.println("ERROR: Account not found: " + id);
+            info = caller.waitOrCall(() -> api.accounts().id(id).get());
+        } catch (Exception e) {
+            logger.error(Logging.prepareWithPart("getAccountInfo", "Account not found", id));
         }
         return info;
     }

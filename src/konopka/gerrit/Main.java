@@ -1,64 +1,83 @@
 package konopka.gerrit;
 
-import com.google.gerrit.extensions.api.GerritApi;
-import com.urswolfer.gerrit.client.rest.GerritAuthData;
-import com.urswolfer.gerrit.client.rest.GerritRestApiFactory;
-import konopka.gerrit.clients.AccountsClient;
-import konopka.gerrit.clients.ChangesClient;
-import konopka.gerrit.clients.ProjectsClient;
-import konopka.gerrit.data.ProjectDto;
-import konopka.gerrit.data.mssql.DataRepository;
+import konopka.util.ArgsHelper;
+import org.apache.log4j.PropertyConfigurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by Martin on 29.6.2015.
  */
 public class Main {
 
-    private static Connection connect(String connectionString) throws SQLException, ClassNotFoundException {
-        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+  //  private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-        String connectionUrl = "jdbc:" + connectionString;
+    private static final String ARG_LOG4J = "-l";
+    private static final String ARG_PROPS = "-p";
 
-        return DriverManager.getConnection(connectionUrl);
+    private static boolean initLogging(List<String> arguments) {
+        try {
+            String log4j_file = ArgsHelper.getArgument(arguments, ARG_LOG4J);
+            PropertyConfigurator.configure(log4j_file);
+            return true;
+        } catch (IndexOutOfBoundsException e) {
+            System.err.println("Properties file expected but path not specified.");
+        } catch (IllegalArgumentException e) {
 
+        }
+        return false;
     }
 
-    public static void main(String[] args) {
-
-
-        GerritRestApiFactory gerritRestApiFactory = new GerritRestApiFactory();
-	// or: authData = new GerritAuthData.Basic("https://example.com/gerrit", "user", "password"");
-        GerritAuthData.Basic authData = new GerritAuthData.Basic("https://git.eclipse.org/r/");
-    	//    GerritAuthData.Basic authData = new GerritAuthData.Basic("https://android-review.googlesource.com/");
-
-        GerritApi gerritApi = gerritRestApiFactory.create(authData);
-        String connectionString = "sqlserver://localhost;databaseName=eclipse-gerrit-dataset;integratedSecurity=true;";
-
+    private static Configuration initConfiguration(List<String> arguments) {
         try {
+            String props_file = ArgsHelper.getArgument(arguments, ARG_PROPS);
+            return new Configuration(props_file);
+        } catch (IndexOutOfBoundsException e) {
+            System.err.println("Configuration file expected but path not specified.");
+        } catch (IllegalArgumentException e) {
 
-            DataRepository repo = new DataRepository(connect(connectionString));
-
-            repo.init();
-
-            ProjectsClient projects = new ProjectsClient(gerritApi, repo.projects(), false);
-            AccountsClient accounts = new AccountsClient(gerritApi, repo.accounts());
-            ChangesClient changes = new ChangesClient(gerritApi, repo.changes(), projects, accounts, repo.accounts());
-
-            projects.prepare();
-            accounts.prepare();
-
-            changes.get(0, 20, 100000, 1000);
-
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
+        return null;
+    }
+
+
+    public static void main(String[] args) {
+//        String log4j_file = "log4j.properties";
+//        String props_file = "symbols.xml";
+
+        boolean init_log4j = false;
+        Configuration config = null;
+
+        if (args.length > 1) {
+            List<String> arguments = Arrays.asList(args);
+            init_log4j = initLogging(arguments);
+            config = initConfiguration(arguments);
+        }
+
+        if (init_log4j == false) {
+            System.out.println("Loading default properties...");
+            PropertyConfigurator.configure("log4j.properties");
+        }
+
+        if (config == null) {
+            System.out.println("Loading default configuration...");
+            config = new Configuration();
+        }
+
+        try {
+            GerritMiner miner = new GerritMiner(config);
+            miner.init();
+            miner.mine();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
 
     }
 

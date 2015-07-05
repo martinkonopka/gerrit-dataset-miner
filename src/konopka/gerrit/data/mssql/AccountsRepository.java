@@ -1,9 +1,8 @@
 package konopka.gerrit.data.mssql;
 
-import konopka.gerrit.data.AccountDto;
+import konopka.gerrit.data.entities.AccountDto;
 import konopka.gerrit.data.IAccountsRepository;
 import konopka.gerrit.data.Repository;
-import konopka.gerrit.data.cache.AccountsCache;
 
 import java.sql.*;
 import java.util.ArrayList;

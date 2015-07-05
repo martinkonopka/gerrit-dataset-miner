@@ -1,0 +1,6 @@
+<properties>
+    <comment>Endpoints configuration</comment>
+    <entry key="DatabaseConnectionString">sqlserver://localhost;databaseName=android-gerrit-dataset;integratedSecurity=true;</entry>
+    <entry key="GerritEndpoint">https://android-review.googlesource.com/</entry>
+    <entry key="ChangesQuery">status:reviewed+OR+status:abandoned+OR+status:open+OR+status:merged</entry>
+</properties>

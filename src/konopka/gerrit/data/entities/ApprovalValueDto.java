@@ -1,4 +1,4 @@
-package konopka.gerrit.data;
+package konopka.gerrit.data.entities;
 
 public class ApprovalValueDto {
     public final short value;

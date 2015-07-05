@@ -1,4 +1,4 @@
-package konopka.gerrit.data;
+package konopka.gerrit.data.entities;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

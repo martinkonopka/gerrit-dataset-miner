@@ -1,6 +1,4 @@
-package konopka.gerrit.data;
-
-import konopka.gerrit.clients.ProjectsClient;
+package konopka.gerrit.data.entities;
 
 import java.util.*;
 

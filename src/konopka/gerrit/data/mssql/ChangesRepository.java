@@ -1,6 +1,10 @@
 package konopka.gerrit.data.mssql;
 
 import konopka.gerrit.data.*;
+import konopka.gerrit.data.entities.*;
+import konopka.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 
@@ -9,7 +13,9 @@ import java.sql.*;
  */
 
 public class ChangesRepository extends Repository implements IChangesRepository {
-    private Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(ChangesRepository.class);
+
+    private final Connection connection;
 
     private static final String CREATE_TABLE_CHANGES = "CREATE TABLE [Changes] (" +
             "[Id] [int] NOT NULL PRIMARY KEY," +
@@ -178,7 +184,8 @@ public class ChangesRepository extends Repository implements IChangesRepository 
                 stmt.setInt(3, change.branch.id);
             }
             else {
-                stmt.setNull(3, Types.INTEGER); System.out.println("Null branch: " + change.id);
+                stmt.setNull(3, Types.INTEGER);
+                logger.info(Logging.prepareWithPart("addChange", "null branch", Integer.toString(change.id)));
             }
             stmt.setString(4, change.changeId);
             stmt.setInt(5, change.owner.id);

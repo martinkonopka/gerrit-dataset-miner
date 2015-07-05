@@ -1,5 +1,7 @@
 package konopka.gerrit.data;
 
+import konopka.gerrit.data.entities.AccountDto;
+
 import java.util.List;
 
 /**

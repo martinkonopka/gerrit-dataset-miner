@@ -1,6 +1,6 @@
 package konopka.gerrit.data;
 
-import com.google.gerrit.extensions.common.ChangeInfo;
+import konopka.gerrit.data.entities.ChangeDto;
 
 /**
  * Created by Martin on 25.6.2015.

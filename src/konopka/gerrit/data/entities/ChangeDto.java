@@ -1,4 +1,4 @@
-package konopka.gerrit.data;
+package konopka.gerrit.data.entities;
 
 import com.google.gerrit.extensions.client.ChangeStatus;
 

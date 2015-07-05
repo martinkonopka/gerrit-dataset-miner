@@ -1,7 +1,7 @@
 package konopka.gerrit.data.cache;
 
 
-import konopka.gerrit.data.AccountDto;
+import konopka.gerrit.data.entities.AccountDto;
 import konopka.gerrit.data.IAccountsRepository;
 
 import java.util.*;
@@ -15,18 +15,13 @@ public class AccountsCache  {
     private Map<String, AccountDto> cacheByName;
     private Map<Integer, AccountDto> cacheByGerritId;
 
-    private IAccountsRepository repo;
-
-    public AccountsCache(IAccountsRepository repo) {
+    public AccountsCache() {
         this.cacheByEmail = new HashMap<>();
         this.cacheByName = new HashMap<>();
         this.cacheByGerritId = new HashMap<>();
-        this.repo = repo;
     }
 
-
-    public void restore() {
-        List<AccountDto> accounts = repo.getAll();
+    public void restore(List<AccountDto> accounts) {
         accounts.forEach(this::cache);
     }
 
@@ -52,7 +47,6 @@ public class AccountsCache  {
         if (isCachedByName(name)) return cacheByName.get(name);
         return null;
     }
-
 
     public void cache(AccountDto account) {
         if ((account.accountId != null) && isCachedByGerritId(account.accountId) == false) cacheByGerritId.put(account.accountId, account);

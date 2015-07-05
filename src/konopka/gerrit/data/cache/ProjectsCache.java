@@ -1,9 +1,10 @@
 package konopka.gerrit.data.cache;
 
 import konopka.gerrit.data.IProjectsRepository;
-import konopka.gerrit.data.ProjectDto;
+import konopka.gerrit.data.entities.ProjectDto;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,14 +17,12 @@ public class ProjectsCache {
 
     private Map<String, ProjectDto> map;
 
-    private IProjectsRepository repo;
-    public ProjectsCache(IProjectsRepository repo) {
-        this.repo = repo;
+    public ProjectsCache() {
         this.map = new HashMap<>();
     }
 
-    public void restore() {
-        repo.getAllProjects().forEach(this::cache);
+    public void restore(List<ProjectDto> projects) {
+        projects.forEach(this::cache);
     }
 
     public boolean isCached(String gerritId) {

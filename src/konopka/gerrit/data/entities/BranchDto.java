@@ -1,4 +1,4 @@
-package konopka.gerrit.data;
+package konopka.gerrit.data.entities;
 
 /**
  * Created by Martin on 27.6.2015.

@@ -1,17 +1,22 @@
 package konopka.gerrit.clients;
 
 import com.google.gerrit.extensions.api.GerritApi;
+import com.google.gerrit.extensions.api.changes.Changes;
 import com.google.gerrit.extensions.api.projects.BranchInfo;
+import com.google.gerrit.extensions.api.projects.ProjectApi;
 import com.google.gerrit.extensions.client.ListChangesOption;
 import com.google.gerrit.extensions.common.ChangeInfo;
+import com.google.gerrit.extensions.common.FetchInfo;
+import com.google.gerrit.extensions.common.LabelInfo;
 import com.google.gerrit.extensions.common.ProjectInfo;
 import com.google.gerrit.extensions.restapi.RestApiException;
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import konopka.gerrit.data.*;
 import konopka.gerrit.data.cache.ProjectsCache;
+import konopka.gerrit.data.entities.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Martin on 26.6.2015.
@@ -21,16 +26,19 @@ public class ProjectsClient {
     private IProjectsRepository repo;
     private ProjectsCache cache;
     private Boolean downloadParents;
-    public ProjectsClient(GerritApi api, IProjectsRepository repository, Boolean downloadParents) {
+    private WaitCaller caller;
+
+    public ProjectsClient(GerritApi api, WaitCaller caller, IProjectsRepository repository, Boolean downloadParents) {
         this.api = api;
         this.repo = repository;
+        this.caller = caller;
 
-        this.cache = new ProjectsCache(repository);
+        this.cache = new ProjectsCache();
         this.downloadParents = downloadParents;
     }
 
     public void prepare() {
-        cache.restore();;
+        cache.restore(repo.getAllProjects());
     }
 
 
@@ -42,8 +50,8 @@ public class ProjectsClient {
         ProjectInfo info = null;
 
         try {
-            info = api.projects().name(id).get();
-        } catch (RestApiException e) {
+            info = caller.waitOrCall(() -> api.projects().name(id).get());
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -58,7 +66,7 @@ public class ProjectsClient {
             project = repo.add(project);
 
             getProjectBranches(project);
-            getApprovals(project);
+           // getApprovals(project);
 
             cache.cache(project);
 
@@ -69,59 +77,90 @@ public class ProjectsClient {
     }
 
 
+//
+//    private void getApprovals(ProjectDto project) {
+//        int start = 0;
+//        int limit = 1;
+//
+//        boolean getCommands = true;
+//
+//        List<ApprovalTypeDto> approvals = new ArrayList<>();
+//        while (approvals.size() <= 0) {
+//            List<ChangeInfo> changes = null;
+//
+//            try {
+//                Changes.QueryRequest request = api.changes().query()
+//                        .withStart(start)
+//                        .withLimit(limit)
+//                        .withOptions(ListChangesOption.DETAILED_LABELS);
+//                if (getCommands) {
+//                    request.withOption(ListChangesOption.DOWNLOAD_COMMANDS);
+//                }
+//
+//                changes = caller.waitOrCall(() -> request.get());
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                getCommands = false;
+//            }
+//
+//            if (changes != null && changes.size() > 0) {
+//                ChangeInfo change = changes.get(0);
+//
+//                if (change.labels != null && change.labels.size() > 0) {
+//                    approvals.addAll(createApprovalTypes(project, change.labels));
+//                }
+//
+//            }
+//
+//            start += limit;
+//        }
+//
+//        approvals.forEach(repo::addApprovalType);
+//
+//        approvals.forEach(a -> project.approvals.put(a.name, a));
+//    }
 
+    private List<ApprovalTypeDto> createApprovalTypes(ProjectDto project, Map<String, LabelInfo> labels) {
+        return labels.entrySet().stream()
+                .filter(e -> project.approvals.containsKey(e.getKey()) == false)
+                .map(e -> createApprovalType(project, e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+    }
 
-
-    private void getApprovals(ProjectDto project) {
-        int start=  0;
-        int limit = 1;
-
-        List<ApprovalTypeDto> approvals = new ArrayList<>();
-        while (approvals.size() <= 0) {
-            List<ChangeInfo> changes;
-            try {
-                changes = api.changes().query()
-                        .withStart(start)
-                        .withLimit(limit)
-                        .withOption(ListChangesOption.DETAILED_LABELS)
-                        .get();
-
-                if (changes.size() > 0) {
-                    ChangeInfo change = changes.get(0);
-
-                    if (change.labels.size() > 0) {
-                        change.labels.entrySet().stream()
-                                .map(e -> {
-                                    short defaultValue = 0;
-                                    if (e.getValue().defaultValue != null) {
-                                        defaultValue = e.getValue().defaultValue;
-                                    }
-
-                                    return new ApprovalTypeDto(project,
-                                            e.getKey(),
-                                            defaultValue,
-                                            e.getValue().values.entrySet().stream()
-                                                    .map(ev -> new ApprovalValueDto(ev.getKey(), ev.getValue())).toArray(ApprovalValueDto[]::new));
-                                })
-                                .map(repo::addApprovalType)
-                                .forEach(approvals::add);
-                    }
-                }
-            } catch (RestApiException e) {
-                e.printStackTrace();
-            }
-
-            start += limit;
+    private ApprovalTypeDto createApprovalType(ProjectDto project, String type, LabelInfo label) {
+        short defaultValue = 0;
+        if (label != null && label.defaultValue != null) {
+            defaultValue = label.defaultValue;
         }
 
-        approvals.forEach(a -> project.approvals.put(a.name, a));
+        return new ApprovalTypeDto(
+                project,
+                type,
+                defaultValue,
+                label.values.entrySet().stream()
+                        .map(ev -> new ApprovalValueDto(ev.getKey(), ev.getValue())).toArray(ApprovalValueDto[]::new));
+    }
+
+    public void addApprovals(ProjectDto project, Map<String, LabelInfo> labels) {
+        if (labels.size() > 0) {
+            labels.entrySet().forEach(e -> addApproval(project, e.getKey(), e.getValue()));
+        }
+    }
+
+    public void addApproval(ProjectDto project, String key, LabelInfo label) {
+        if (project.approvals.containsKey(key) == false) {
+            ApprovalTypeDto approval = createApprovalType(project, key, label);
+            repo.addApprovalType(approval);
+            project.approvals.put(approval.name, approval);
+        }
     }
 
     private void getProjectBranches(ProjectDto project) {
         List<BranchInfo> branches = null;
         try {
-            branches = api.projects().name(project.projectId).branches().get();
-        } catch (RestApiException e) {
+            ProjectApi.ListBranchesRequest request = api.projects().name(project.projectId).branches();
+            branches = caller.waitOrCall(() -> request.get());
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

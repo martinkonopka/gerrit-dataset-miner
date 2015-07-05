@@ -1,7 +1,10 @@
 package konopka.gerrit.data.mssql;
 
 import konopka.gerrit.data.*;
-import konopka.gerrit.data.cache.ProjectsCache;
+import konopka.gerrit.data.entities.ApprovalTypeDto;
+import konopka.gerrit.data.entities.ApprovalValueDto;
+import konopka.gerrit.data.entities.BranchDto;
+import konopka.gerrit.data.entities.ProjectDto;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -15,7 +18,8 @@ public class ProjectsRepository extends Repository implements IProjectsRepositor
             "[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY," +
             "[ProjectId] [nvarchar](max) NOT NULL," +
             "[Name] [nvarchar](max) NOT NULL," +
-            "[ParentId] [int] NULL" +
+            "[ParentId] [int] NULL," +
+            "CONSTRAINT [FK_Projects_Projects] FOREIGN KEY ([ParentId]) REFERENCES [Projects] ([Id]) ON DELETE NO ACTION ON UPDATE NO ACTION" +
             ");";
 
     private final static String CREATE_BRANCH_TABLE_QUERY = "CREATE TABLE [Branches] " +
@@ -52,11 +56,6 @@ public class ProjectsRepository extends Repository implements IProjectsRepositor
             "(TypeId, Value, Description) VALUES(?, ?, ?);";
 
 
-    private final static String ADD_FOREIGNKEYS_QUERY = "ALTER TABLE [Projects] WITH CHECK ADD CONSTRAINT [FK_Projects_Project_ParentId_Id] FOREIGN KEY([ParentId]) " +
-            "REFERENCES [Projects] ([Id]) " +
-            "ON DELETE NO ACTION;";
-    private final static String ALTER_TABLE_QUERY = "ALTER TABLE [Projects] CHECK CONSTRAINT [FK_Projects_Project_ParentId_Id];";
-
     private final static String INSERT_PROJECT_QUERY = "INSERT INTO [Projects] (" +
             "[ProjectId], " +
             "[Name], " +
@@ -78,10 +77,7 @@ public class ProjectsRepository extends Repository implements IProjectsRepositor
     @Override
     public void init() {
 
-        if (executeSqlStatement(connection, CREATE_TABLE_QUERY)) {
-            executeSqlStatement(connection, ADD_FOREIGNKEYS_QUERY);
-            executeSqlStatement(connection, ALTER_TABLE_QUERY);
-        }
+        executeSqlStatement(connection, CREATE_TABLE_QUERY);
         executeSqlStatement(connection, CREATE_BRANCH_TABLE_QUERY);
         executeSqlStatement(connection, CREATE_APPROVALTYPE_TABLE_QUERY);
         executeSqlStatement(connection, CREATE_APPROVALVALUE_TABLE_QUERY);

@@ -6,6 +6,5 @@ package konopka.gerrit.data;
 public interface IDataRepository extends IRepository {
     IProjectsRepository projects();
     IChangesRepository changes();
-//    IBranchesRepository branches();
     IAccountsRepository accounts();
 }
