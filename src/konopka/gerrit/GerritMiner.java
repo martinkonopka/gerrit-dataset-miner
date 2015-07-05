@@ -62,7 +62,6 @@ public class GerritMiner {
             changes.get(configuration.getChangesQuery(), 0, 20);
         } catch (InterruptedException e) {
             logger.info(Logging.prepare("mine", "interrupted"));
-            e.printStackTrace();
         }
     }
 }

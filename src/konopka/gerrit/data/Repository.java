@@ -9,7 +9,6 @@ import java.sql.Statement;
  */
 public abstract class Repository {
 
-
     protected boolean executeSqlStatement(Connection connection, String sql) {
         Statement stmt = null;
         try {
@@ -19,7 +18,7 @@ public abstract class Repository {
 
             return true;
         } catch (SQLException e) {
-            e.printStackTrace();
+         //   e.printStackTrace();
         }
         finally {
             closeStatement(stmt);

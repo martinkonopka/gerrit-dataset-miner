@@ -41,6 +41,7 @@ public class Configuration {
 
 
     public Configuration(String path) {
+        setDefaults();
         SymbolMap sm  = new SymbolMap(new File(path));
         String connection = sm.lookupSymbol("DatabaseConnectionString");
         if (connection.isEmpty() == false) {
@@ -65,12 +66,15 @@ public class Configuration {
     }
 
     public Configuration() {
+        setDefaults();
+        log();
+    }
+
+    private void setDefaults() {
         databaseConnectionString = "sqlserver://localhost;databaseName=android-gerrit-dataset;integratedSecurity=true;";
         gerritEndpoint = "https://android-review.googlesource.com/";
         changesQuery = "status:reviewed+OR+status:merged+OR+status:open+OR+status:abandoned";
-        downloadPause = 100;
-
-        log();
+        downloadPause = 200;
     }
 
     private void log() {

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,6 +23,7 @@ public class Main {
     private static boolean initLogging(List<String> arguments) {
         try {
             String log4j_file = ArgsHelper.getArgument(arguments, ARG_LOG4J);
+            System.out.println("Loading properties from file: " + log4j_file + "...");
             PropertyConfigurator.configure(log4j_file);
             return true;
         } catch (IndexOutOfBoundsException e) {
@@ -35,6 +37,7 @@ public class Main {
     private static Configuration initConfiguration(List<String> arguments) {
         try {
             String props_file = ArgsHelper.getArgument(arguments, ARG_PROPS);
+            System.out.println("Loading configuration from file: " + props_file + "...");
             return new Configuration(props_file);
         } catch (IndexOutOfBoundsException e) {
             System.err.println("Configuration file expected but path not specified.");
@@ -53,15 +56,23 @@ public class Main {
         boolean init_log4j = false;
         Configuration config = null;
 
-        if (args.length > 1) {
-            List<String> arguments = Arrays.asList(args);
-            init_log4j = initLogging(arguments);
-            config = initConfiguration(arguments);
+        List<String> arguments = Collections.emptyList();
+        if (args != null && args.length > 0) {
+            arguments = Arrays.asList(args);
         }
 
+        if (arguments.size() > 0) {
+            init_log4j = initLogging(arguments);
+        }
         if (init_log4j == false) {
             System.out.println("Loading default properties...");
             PropertyConfigurator.configure("log4j.properties");
+        }
+
+
+
+        if (arguments.size() > 0) {
+            config = initConfiguration(arguments);
         }
 
         if (config == null) {

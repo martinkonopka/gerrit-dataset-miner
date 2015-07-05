@@ -9,7 +9,7 @@ public class ArgsHelper {
     public static String getArgument(List<String> args, String arg) throws IndexOutOfBoundsException, IllegalArgumentException {
         if (args.contains(arg)) {
             int index = args.indexOf(arg);
-            if (index > 0 && index < args.size() - 1) {
+            if (index >= 0 && index < args.size() - 1) {
                 return args.get(index + 1);
             }
             throw new IndexOutOfBoundsException();
