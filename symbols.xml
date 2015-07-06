@@ -5,5 +5,5 @@
     <entry key="DatabaseConnectionString">sqlserver://localhost;databaseName=android-gerrit-dataset;integratedSecurity=true;</entry>
     <entry key="GerritEndpoint">https://android-review.googlesource.com/</entry>
     <entry key="ChangesQuery">status:reviewed+OR+status:abandoned+OR+status:open+OR+status:merged</entry>
-    <entry key="DownloadPause">200</entry>
+    <entry key="DownloadPause">5000</entry>
 </properties>

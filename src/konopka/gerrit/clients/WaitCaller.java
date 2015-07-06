@@ -16,10 +16,12 @@ public class WaitCaller {
 
         Instant now = Instant.now();
 
+
         if (lastCall.plusMillis(pause).isAfter(now)) {
             long wait = pause - ( now.toEpochMilli() - lastCall.toEpochMilli() );
             Thread.sleep(wait);
         }
+        lastCall = now;
         return caller.call();
     }
 

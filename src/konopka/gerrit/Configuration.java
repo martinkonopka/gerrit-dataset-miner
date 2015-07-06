@@ -74,7 +74,7 @@ public class Configuration {
         databaseConnectionString = "sqlserver://localhost;databaseName=android-gerrit-dataset;integratedSecurity=true;";
         gerritEndpoint = "https://android-review.googlesource.com/";
         changesQuery = "status:reviewed+OR+status:merged+OR+status:open+OR+status:abandoned";
-        downloadPause = 200;
+        downloadPause = 5000;
     }
 
     private void log() {
