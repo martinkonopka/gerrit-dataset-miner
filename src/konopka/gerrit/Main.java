@@ -49,7 +49,8 @@ public class Main {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+
 //        String log4j_file = "log4j.properties";
 //        String props_file = "symbols.xml";
 

@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Martin on 27.6.2015.
@@ -79,16 +80,15 @@ public class ChangesClient {
 //    }
 //
 
-
-    private List<ChangeInfo> downloadChanges(String query, int start, int limit) {
+    private List<ChangeInfo> downloadChangeDetails(int number) {
+        List<ChangeInfo> details = null;
+        String query = Integer.toString(number);
         try {
-            logger.info(Logging.prepare("downloadChanges", query, Integer.toString(start), Integer.toString(limit)));
+            logger.info(Logging.prepare("downloadChangeDetails", query));
 
             Changes.QueryRequest request = api
                     .changes()
                     .query(query)
-                    .withStart(start)
-                    .withLimit(limit)
                     .withOptions(ListChangesOption.DETAILED_LABELS,
                             ListChangesOption.ALL_REVISIONS,
                             ListChangesOption.ALL_COMMITS,
@@ -98,11 +98,57 @@ public class ChangesClient {
                             ListChangesOption.DETAILED_ACCOUNTS,
                             ListChangesOption.DOWNLOAD_COMMANDS);
 
-            return caller.waitOrCall(request::get);
+            details = caller.waitOrCall(request::get);
+        } catch (Exception e) {
+            logger.error(Logging.prepare("downloadChangeDetails", query));
+        }
+
+        if (details == null) {
+            details = Collections.emptyList();
+        }
+
+        int count = details.size();
+        if (count == 0) {
+            logger.info(Logging.prepareWithPart("downloadChangeDetails", query), "no details");
+        }
+        else if (count > 1) {
+            logger.info(Logging.prepareWithPart("downloadChangeDetails", query), "more than 1 details");
+        }
+
+        return details;
+    }
+
+    private List<ChangeInfo> downloadChanges(String query, int start, int limit) {
+        List<ChangeInfo> infos = null;
+        try {
+            logger.info(Logging.prepare("downloadChanges", query, Integer.toString(start), Integer.toString(limit)));
+
+            Changes.QueryRequest request = api
+                    .changes()
+                    .query(query)
+                    .withStart(start)
+                    .withLimit(limit);
+
+            infos = caller.waitOrCall(request::get);
         } catch (Exception e) {
             logger.error(Logging.prepare("downloadChanges", query, Integer.toString(start), Integer.toString(limit)), e);
         }
-        return Collections.emptyList();
+        if (infos == null || infos.size() == 0) {
+            infos = Collections.emptyList();
+            logger.info(Logging.prepareWithPart("downloadChanges", "no results", Integer.toString(start), Integer.toString(limit)));
+        }
+        else {
+            List<String> results = infos.stream().map(i -> Integer.toString(i._number)).collect(Collectors.toList());
+
+            if (results.size() > 0) {
+                logger.info(Logging.prepareWithPart("downloadChanges", String.join(",", results), Integer.toString(start), Integer.toString(limit)));
+            }
+            else {
+                logger.info(Logging.prepareWithPart("downloadChanges", "no results", Integer.toString(start), Integer.toString(limit)));
+            }
+        }
+
+        return infos;
     }
 
     public void get(String query, int start, int limit) throws InterruptedException {
@@ -114,7 +160,12 @@ public class ChangesClient {
                 if (infos.size() > 0) {
                     int savedChanges = 0;
                     for (ChangeInfo info : infos) {
-                        savedChanges += saveChange(info) ? 1 : 0;
+
+                        List<ChangeInfo> details = downloadChangeDetails(info._number);
+
+                        for (ChangeInfo detail : details) {
+                            savedChanges += saveChange(detail) ? 1 : 0;
+                        }
                     }
 
                     int totalCount = Math.max(infos.size(), 1);

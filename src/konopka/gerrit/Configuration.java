@@ -17,7 +17,9 @@ public class Configuration {
     private String gerritEndpoint = "";
     private String changesQuery = "";
 
-    private long downloadPause = 0;
+    private long downloadPause;
+    private int queryStart;
+    private int queryLimit;
 
     public final String getDatabaseConnectionString() {
         return databaseConnectionString;
@@ -62,6 +64,17 @@ public class Configuration {
             downloadPause = Long.parseLong(pause);
         }
 
+        String start = sm.lookupSymbol("Start");
+        if (start.isEmpty() == false) {
+            queryStart = Integer.parseInt(start);
+        }
+
+        String limit = sm.lookupSymbol("Limit");
+        if (limit.isEmpty() == false) {
+            queryLimit = Integer.parseInt(limit);
+        }
+
+
         log();
     }
 
@@ -75,6 +88,8 @@ public class Configuration {
         gerritEndpoint = "https://android-review.googlesource.com/";
         changesQuery = "status:reviewed+OR+status:merged+OR+status:open+OR+status:abandoned";
         downloadPause = 5000;
+        queryStart = 0;
+        queryLimit = 20;
     }
 
     private void log() {
@@ -82,5 +97,15 @@ public class Configuration {
         logger.info(Logging.prepareWithPart("init", "GerritEndpoint: " + gerritEndpoint));
         logger.info(Logging.prepareWithPart("init", "ChangesQuery: " + changesQuery));
         logger.info(Logging.prepareWithPart("init", "DownloadPause: " + downloadPause));
+        logger.info(Logging.prepareWithPart("init", "Start: " + queryStart));
+        logger.info(Logging.prepareWithPart("init", "Limit: " + queryLimit));
+    }
+
+    public int getStart() {
+        return queryStart;
+    }
+
+    public int getLimit() {
+        return queryLimit;
     }
 }

@@ -59,7 +59,7 @@ public class GerritMiner {
 
     public void mine() {
         try {
-            changes.get(configuration.getChangesQuery(), 0, 20);
+            changes.get(configuration.getChangesQuery(), configuration.getStart(), configuration.getLimit());
         } catch (InterruptedException e) {
             logger.info(Logging.prepare("mine", "interrupted"));
         }

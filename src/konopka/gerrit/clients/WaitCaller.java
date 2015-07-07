@@ -18,8 +18,8 @@ public class WaitCaller {
 
 
         if (lastCall.plusMillis(pause).isAfter(now)) {
-            long wait = pause - ( now.toEpochMilli() - lastCall.toEpochMilli() );
-            Thread.sleep(wait);
+          //  long wait = pause - ( now.toEpochMilli() - lastCall.toEpochMilli() );
+            Thread.sleep(pause);
         }
         lastCall = now;
         return caller.call();
