@@ -100,7 +100,7 @@ public class ChangesClient {
 
             details = caller.waitOrCall(request::get);
         } catch (Exception e) {
-            logger.error(Logging.prepare("downloadChangeDetails", query));
+            logger.error(Logging.prepare("downloadChangeDetails", query), e);
         }
 
         if (details == null) {
@@ -109,10 +109,10 @@ public class ChangesClient {
 
         int count = details.size();
         if (count == 0) {
-            logger.info(Logging.prepareWithPart("downloadChangeDetails", query), "no details");
+            logger.info(Logging.prepareWithPart("downloadChangeDetails", "no details", query));
         }
         else if (count > 1) {
-            logger.info(Logging.prepareWithPart("downloadChangeDetails", query), "more than 1 details");
+            logger.info(Logging.prepareWithPart("downloadChangeDetails", "more than 1 detail", query));
         }
 
         return details;
@@ -161,6 +161,11 @@ public class ChangesClient {
                     int savedChanges = 0;
                     for (ChangeInfo info : infos) {
 
+                        if (repo.containsChange(info._number)) {
+                            logger.info(Logging.prepareWithPart("get", "skipping " + Integer.toString(info._number)));
+                            continue;
+                        }
+
                         List<ChangeInfo> details = downloadChangeDetails(info._number);
 
                         for (ChangeInfo detail : details) {
@@ -187,10 +192,9 @@ public class ChangesClient {
         logger.info(Logging.prepare("saveChange", Integer.toString(info._number)));
 
         if (repo.containsChange(info._number)) {
-            logger.info(Logging.prepareWithPart("saveChange", "skipping", Integer.toString(info._number)));
+            logger.info(Logging.prepareWithPart("saveChange", "skipping ", Integer.toString(info._number)));
             return false;
         }
-
         ProjectDto project = projects.getProject(Url.encode(info.project));
         BranchDto branch = project.getBranch(info.branch);
         AccountDto owner = accounts.get(info.owner);
