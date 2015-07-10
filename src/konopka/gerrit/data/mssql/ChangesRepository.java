@@ -332,14 +332,14 @@ public class ChangesRepository extends Repository implements IChangesRepository 
         try {
             stmt = connection.prepareStatement(INSERT_CHANGE_MESSAGE_QUERY);
             stmt.setInt(1, comment.change.id);
-            stmt.setString(3, comment.id);
-            stmt.setTimestamp(4, comment.createdAt);
-            stmt.setString(5, comment.message);
+            stmt.setString(2, comment.id);
+            stmt.setTimestamp(3, comment.createdAt);
+            stmt.setString(4, comment.message);
             if (comment.author != null) {
-                stmt.setInt(6, comment.author.id);
+                stmt.setInt(5, comment.author.id);
             }
             else {
-                stmt.setNull(6, Types.INTEGER);
+                stmt.setNull(5, Types.INTEGER);
             }
 
             stmt.execute();
