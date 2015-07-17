@@ -9,6 +9,7 @@ How to
 1. Setup MSSQL Server and create an empty database.
 2. Build a JAR file of the project, put sqljdbc JAR next to it.
 3. Edit file symbols.xml and copy it next to the JAR file of the project.
+
  3.a. Add a connection string to the freshly created database. For an example, please, see default symbols.xml file in the project's directory:
 
     sqlserver://localhost;databaseName=android-gerrit-dataset;integratedSecurity=true;
@@ -38,6 +39,7 @@ Dependencies
 
 [Download datasets]
 --------------------
+Currently, Eclipse and Android are available, others are coming.
 [Download datasets]: http://www2.fiit.stuba.sk/~konopka/gerrit
 
 About
