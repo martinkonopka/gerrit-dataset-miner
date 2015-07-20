@@ -50,9 +50,27 @@ public class AccountsRepository extends Repository implements IAccountsRepositor
         try {
 
             stmt = connection.prepareStatement(INSERT_ACCOUNT_QUERY, Statement.RETURN_GENERATED_KEYS);
-            stmt.setString(1, account.name);
-            stmt.setString(2, account.email);
-            stmt.setString(3, account.username);
+            if (account.name != null) {
+                stmt.setString(1, account.name);
+            }
+            else {
+                stmt.setNull(1, Types.NVARCHAR);
+            }
+
+            if (account.email != null) {
+                stmt.setString(2, account.email);
+            }
+            else {
+                stmt.setNull(2, Types.NVARCHAR);
+            }
+
+            if (account.username != null) {
+                stmt.setString(3, account.username);
+            }
+            else {
+                stmt.setNull(3, Types.NVARCHAR);
+            }
+
             if (account.accountId != null) {
                 stmt.setInt(4, account.accountId);
             }

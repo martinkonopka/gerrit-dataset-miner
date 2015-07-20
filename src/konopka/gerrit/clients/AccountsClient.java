@@ -2,6 +2,7 @@ package konopka.gerrit.clients;
 
 import com.google.gerrit.extensions.api.GerritApi;
 import com.google.gerrit.extensions.common.AccountInfo;
+import com.google.gerrit.extensions.common.GitPerson;
 import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.Url;
 import konopka.gerrit.data.entities.AccountDto;
@@ -21,6 +22,7 @@ public class AccountsClient {
     private final IAccountsRepository repo;
     private final AccountsCache cache;
     private final WaitCaller caller;
+
 
     public AccountsClient(GerritApi api, WaitCaller caller, IAccountsRepository repo) {
         this.api = api;
@@ -65,7 +67,18 @@ public class AccountsClient {
         return info;
     }
 
+    public AccountDto get(GitPerson person) {
+        if (person == null) {
+            throw new IllegalArgumentException("Argument person must not be null.");
+        }
+        return get(person.name, person.email);
+    }
+
     public AccountDto get(AccountInfo info) {
+        if (info == null) {
+            throw new IllegalArgumentException("Argument info must not be null.");
+        }
+
         if (cache.isCached(info.email, info.name, info._accountId))
         {
             return cache.tryGetCached(info.email, info.name, info._accountId);
@@ -76,6 +89,23 @@ public class AccountsClient {
             cache.cache(account);
         }
         return account;
+    }
+
+    public AccountDto getDefault() {
+
+        if (cache.hasNullAccount() == false) {
+            cache.setNullAccount(repo.add(AccountDto.CreateNullAccount()));
+        }
+
+        return cache.getNullAccount();
+    }
+
+    public AccountDto getOrDefault(AccountInfo info) {
+        return info != null ? get(info) : getDefault();
+    }
+
+    public AccountDto getOrDefault(GitPerson person) {
+        return person != null ? get(person) : getDefault();
     }
 
     private AccountDto saveGerritAccount(AccountInfo info) {

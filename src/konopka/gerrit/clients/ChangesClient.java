@@ -123,7 +123,9 @@ public class ChangesClient {
         }
         ProjectDto project = projects.getProject(Url.encode(info.project));
         BranchDto branch = projects.getBranch(project, info.branch);
-        AccountDto owner = accounts.get(info.owner);
+
+        AccountDto owner = accounts.getOrDefault(info.owner);
+
         ChangeDto change = new ChangeDto(info._number, project, branch, owner);
 
         change.changeId = info.id;
@@ -162,11 +164,13 @@ public class ChangesClient {
             patch.subject = revision.commit.subject;
             patch.message = revision.commit.message;
             patch.createdAt = revision.created;
-            if (patch.createdAt == null) {
+            if (patch.createdAt == null && revision.commit.author != null) {
                 patch.createdAt = revision.commit.author.date;
             }
-            patch.author = accounts.get(revision.commit.author.name, revision.commit.author.email);
-            patch.committer = accounts.get(revision.commit.committer.name, revision.commit.committer.email);
+
+            patch.author = accounts.getOrDefault(revision.commit.author);
+            patch.committer = accounts.getOrDefault(revision.commit.committer);
+
             if (revision.files != null && revision.files.values().size() > 1) {
                 patch.addedLines = revision.files.values().stream().filter(f -> f.linesInserted != null).mapToInt(f -> f.linesInserted).sum();
                 patch.deletedLines = revision.files.values().stream().filter(f -> f.linesDeleted != null).mapToInt(f -> f.linesDeleted).sum();
@@ -232,7 +236,14 @@ public class ChangesClient {
             info.labels.entrySet().stream()
                     .filter(e -> e.getValue() != null && e.getValue().all != null && e.getValue().all.size() > 0)
                     .forEach(e -> e.getValue().all.stream().filter(l -> l.date != null).map(l -> {
-                        List<CommentDto> comments = change.comments.stream().filter(m -> m.createdAt.equals(l.date) && m.author.accountId.equals(l._accountId)).collect(Collectors.toList());
+                        Stream<CommentDto> commentsStream = change.comments.stream().filter(m -> m.createdAt.equals(l.date));
+                        if (l._accountId == null) {
+                            commentsStream = commentsStream.filter(m -> m.author.isNull());
+                        }
+                        else {
+                            commentsStream = commentsStream.filter(m -> m.author.isNull() == false && m.author.accountId.equals(l._accountId));
+                        }
+                        List<CommentDto> comments = commentsStream.collect(Collectors.toList());
                         Optional<CommentDto> comment = comments.stream().filter(c -> c.patchSet != null).findFirst();
                         if (comment.isPresent() == false) {
                             comment = comments.stream().findAny();
@@ -257,8 +268,7 @@ public class ChangesClient {
                         }
                         return null;
                     }).filter(a -> a != null).forEach(change.approvals::add));
-        }
-        else {
+        } else {
             logger.info(Logging.prepareWithPart("saveChange", "no labels", Integer.toString(info._number)));
         }
 
@@ -282,7 +292,7 @@ public class ChangesClient {
                         comment.inReplyToCommentId = ci.inReplyTo;
                         comment.createdAt = ci.updated;
                         comment.message = ci.message;
-                        comment.author = accounts.get(ci.author);
+                        comment.author = accounts.getOrDefault(ci.author);
                         comment.line = ci.line;
                         comment.range = ci.range;
                         change.comments.add(comment);
@@ -302,10 +312,8 @@ public class ChangesClient {
                 CommentDto comment = new CommentDto(patch, m.id);
                 comment.createdAt = m.date;
                 comment.message = m.message;
+                comment.author = accounts.getOrDefault(m.author);
 
-                if (m.author != null) {
-                    comment.author = accounts.get(m.author);
-                }
                 change.comments.add(comment);
             });
         }
@@ -318,9 +326,7 @@ public class ChangesClient {
                 comment.createdAt = m.date;
                 comment.message = m.message;
 
-                if (m.author != null) {
-                    comment.author = accounts.get(m.author);
-                }
+                comment.author = accounts.getOrDefault(m.author);
                 change.comments.add(comment);
             });
         }

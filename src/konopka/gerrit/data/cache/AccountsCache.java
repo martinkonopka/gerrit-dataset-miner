@@ -14,6 +14,7 @@ public class AccountsCache  {
     private Map<String, AccountDto> cacheByEmail;
     private Map<String, AccountDto> cacheByName;
     private Map<Integer, AccountDto> cacheByGerritId;
+    private AccountDto nullAccount;
 
     public AccountsCache() {
         this.cacheByEmail = new HashMap<>();
@@ -45,12 +46,31 @@ public class AccountsCache  {
         if (isCachedByGerritId(gerritId)) return cacheByGerritId.get(gerritId);
         if (isCachedByEmail(email)) return cacheByEmail.get(email);
         if (isCachedByName(name)) return cacheByName.get(name);
-        return null;
+        return getNullAccount();
     }
 
     public void cache(AccountDto account) {
-        if ((account.accountId != null) && isCachedByGerritId(account.accountId) == false) cacheByGerritId.put(account.accountId, account);
-        if ((account.email != null) && isCachedByEmail(account.email) == false) cacheByEmail.put(account.email, account);
-        if ((account.name != null) && isCachedByName(account.name) == false) cacheByName.put(account.name, account);
+        if (account.isNull()) {
+            setNullAccount(account);
+        }
+        else {
+            if ((account.accountId != null) && isCachedByGerritId(account.accountId) == false)
+                cacheByGerritId.put(account.accountId, account);
+            if ((account.email != null) && isCachedByEmail(account.email) == false)
+                cacheByEmail.put(account.email, account);
+            if ((account.name != null) && isCachedByName(account.name) == false) cacheByName.put(account.name, account);
+        }
+    }
+
+    public boolean hasNullAccount() {
+        return nullAccount != null;
+    }
+
+    public void setNullAccount(AccountDto account) {
+        nullAccount = account;
+    }
+
+    public AccountDto getNullAccount() {
+        return nullAccount;
     }
 }

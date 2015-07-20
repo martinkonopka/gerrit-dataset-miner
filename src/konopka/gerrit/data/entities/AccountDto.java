@@ -27,4 +27,15 @@ public class AccountDto {
     public String email;
     public String username;
     public Integer accountId;
+
+    public boolean isNull() {
+        return this.accountId == null
+                && this.email == null
+                && this.name == null
+                && this.username == null;
+    }
+
+    public static AccountDto CreateNullAccount() {
+        return new AccountDto(null, null);
+    }
 }
