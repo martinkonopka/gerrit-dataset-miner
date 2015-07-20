@@ -6,5 +6,9 @@
     <entry key="GerritEndpoint">https://android-review.googlesource.com/</entry>
     <entry key="ChangesQuery">status:reviewed+OR+status:abandoned+OR+status:open+OR+status:merged</entry>
     <entry key="DownloadPause">5000</entry>
-    <entry key="Start">5000</entry>
+    <entry key="Start">10120</entry>
+    <entry key="Stop">300000</entry>
+    <entry key="Limit">400</entry>
+    <entry key="MiningMode">simple</entry>
+    <entry key="DownloadAttemptsLimit">3</entry>
 </properties>

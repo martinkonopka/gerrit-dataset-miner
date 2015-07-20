@@ -14,6 +14,9 @@ import com.sun.javaws.exceptions.InvalidArgumentException;
 import konopka.gerrit.data.*;
 import konopka.gerrit.data.cache.ProjectsCache;
 import konopka.gerrit.data.entities.*;
+import konopka.util.Logging;
+import org.apache.log4j.spi.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +25,9 @@ import java.util.stream.Collectors;
  * Created by Martin on 26.6.2015.
  */
 public class ProjectsClient {
+   private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ProjectsClient.class);
+
+
     private GerritApi api;
     private IProjectsRepository repo;
     private ProjectsCache cache;
@@ -52,7 +58,8 @@ public class ProjectsClient {
         try {
             info = caller.waitOrCall(() -> api.projects().name(id).get());
         } catch (Exception e) {
-            e.printStackTrace();
+
+            logger.error(Logging.prepare("getProject", id), e);
         }
 
         if (info != null) {
@@ -65,7 +72,7 @@ public class ProjectsClient {
 
             project = repo.add(project);
 
-            getProjectBranches(project);
+           // getProjectBranches(project);
            // getApprovals(project);
 
             cache.cache(project);
@@ -161,13 +168,30 @@ public class ProjectsClient {
             ProjectApi.ListBranchesRequest request = api.projects().name(project.projectId).branches();
             branches = caller.waitOrCall(() -> request.get());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(Logging.prepare("getProjectBranches", project.projectId), e);
+
         }
 
         if (branches != null) {
-            branches.stream().map(b -> repo.addBranch(project, b.ref, b.revision))
+            List<BranchDto> projectBranches = branches.stream()
+                    .filter(b -> project.hasBranch(b.ref) == false)
+                    .map(b -> repo.addBranch(project, b.ref, b.revision))
                     .filter(b -> b != null)
-                    .forEach(project.branches::add);
+                    .collect(Collectors.toList());
+
+            projectBranches.forEach(project.branches::add);
         }
+    }
+
+    public BranchDto getBranch(ProjectDto project, String name) {
+        if (project.hasBranch(name) == false) {
+            repo.loadProjectBranches(project);
+        }
+
+        if (project.hasBranch(name) == false) {
+            getProjectBranches(project);
+        }
+        return project.getBranch(name);
+
     }
 }

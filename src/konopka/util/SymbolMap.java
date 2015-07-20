@@ -33,6 +33,6 @@ public class SymbolMap {
         }
         //Interpolate parameters if necessary
         //and return the message
-        return String.format(message, variables);
+        return String.format(message, new Object[]{variables});
     }
 }

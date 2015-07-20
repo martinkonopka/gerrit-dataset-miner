@@ -3,6 +3,8 @@ package konopka.gerrit.data.mssql;
 import konopka.gerrit.data.entities.AccountDto;
 import konopka.gerrit.data.IAccountsRepository;
 import konopka.gerrit.data.Repository;
+import konopka.util.Logging;
+import org.slf4j.Logger;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.List;
  * Created by Martin on 27.6.2015.
  */
 public class AccountsRepository extends Repository implements IAccountsRepository {
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(AccountsRepository.class);
 
     private static final String CREATE_TABLE_QUERY = "CREATE TABLE [Accounts] " +
             "(" +
@@ -68,6 +71,7 @@ public class AccountsRepository extends Repository implements IAccountsRepositor
 
 
         } catch (SQLException e) {
+            logger.error(Logging.prepare("add", account.email));
             e.printStackTrace();
         } finally {
             closeStatement(stmt);
@@ -99,7 +103,8 @@ public class AccountsRepository extends Repository implements IAccountsRepositor
 
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(Logging.prepare("getAll"), e);
+//            e.printStackTrace();
         }
         finally {
             closeStatement(stmt);

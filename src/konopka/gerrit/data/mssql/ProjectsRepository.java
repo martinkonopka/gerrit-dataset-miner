@@ -103,7 +103,7 @@ public class ProjectsRepository extends Repository implements IProjectsRepositor
                     project.parentId = Optional.empty();
                 }
 
-                getBranches(project).forEach(project.branches::add);
+                //getBranches(project).forEach(project.branches::add);
                 getApprovals(project).forEach(a -> project.approvals.put(a.name, a));
                 projects.add(project);
             }
@@ -113,6 +113,10 @@ public class ProjectsRepository extends Repository implements IProjectsRepositor
             closeStatement(stmt);
         }
         return projects;
+    }
+
+    public void loadProjectBranches(ProjectDto project) {
+        getBranches(project).forEach(project.branches::add);
     }
 
     public List<BranchDto> getBranches(ProjectDto project) {

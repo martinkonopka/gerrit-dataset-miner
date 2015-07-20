@@ -1,9 +1,6 @@
 package konopka.gerrit.data.mssql;
 
-import konopka.gerrit.data.IAccountsRepository;
-import konopka.gerrit.data.IChangesRepository;
-import konopka.gerrit.data.IDataRepository;
-import konopka.gerrit.data.IProjectsRepository;
+import konopka.gerrit.data.*;
 
 import java.sql.Connection;
 
@@ -14,13 +11,14 @@ public class DataRepository implements IDataRepository {
 
     private IProjectsRepository _projects;
     private IAccountsRepository _accounts;
-    private ChangesRepository _changes;
+    private IChangesRepository _changes;
+    private IDownloadsRepository _downloads;
 
     public DataRepository(Connection connection) {
         _projects = new ProjectsRepository(connection);
         _accounts = new AccountsRepository(connection);
         _changes = new ChangesRepository(connection);
-
+        _downloads = new DownloadsRepository(connection);
     }
 
     @Override
@@ -28,6 +26,7 @@ public class DataRepository implements IDataRepository {
         _projects.init();
         _accounts.init();
         _changes.init();
+        _downloads.init();
     }
 
     @Override
@@ -42,4 +41,7 @@ public class DataRepository implements IDataRepository {
     public IChangesRepository changes() {
         return _changes;
     }
+
+    @Override
+    public IDownloadsRepository downloads() { return _downloads; }
 }

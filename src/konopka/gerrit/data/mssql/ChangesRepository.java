@@ -197,7 +197,6 @@ public class ChangesRepository extends Repository implements IChangesRepository 
             stmt.setString(11, change.state.name().toUpperCase());
             stmt.setBoolean(12, change.isMergeable != null ? change.isMergeable : false);
             stmt.setString(13, change.baseChangeId);
-            //stmt.setInt(13, 0);
             if (change.currentPatchSet != null) {
                 stmt.setString(14, buildPatchSetId(change.currentPatchSet));
             }

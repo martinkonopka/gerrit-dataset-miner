@@ -27,11 +27,15 @@ public class ProjectDto {
     public final List<BranchDto> branches;
     public final Map<String, ApprovalTypeDto> approvals;
 
-    public BranchDto getBranch(String key) {
-        Optional<BranchDto> branch = branches.stream().filter(b -> b.name.equals(key) || b.revision.equals(key) || (b.name.endsWith(key) && b.name.startsWith("refs")) || b.name.contains(key)).findFirst();
+    public BranchDto getBranch(String name) {
+        Optional<BranchDto> branch = branches.stream().filter(b -> b.equalsByName(name)).findFirst();
         if (branch.isPresent()) {
             return branch.get();
         }
         return null;
+    }
+
+    public boolean hasBranch(String name) {
+        return branches.stream().anyMatch(b -> b.equalsByName(name));
     }
 }

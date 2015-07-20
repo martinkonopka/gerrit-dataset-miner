@@ -14,18 +14,16 @@ import konopka.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.stream.events.Comment;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Martin on 27.6.2015.
  */
 public class ChangesClient {
-
-    private static final Logger logger;
-    static {
-        logger = LoggerFactory.getLogger(ChangesClient.class);
-    }
+    private static final Logger logger = LoggerFactory.getLogger(ChangesClient.class);
 
     private final WaitCaller caller;
     private GerritApi api;
@@ -33,6 +31,7 @@ public class ChangesClient {
 
     private ProjectsClient projects;
     private AccountsClient accounts;
+
     public ChangesClient(GerritApi api, WaitCaller caller, IChangesRepository repository, ProjectsClient projects, AccountsClient accounts) {
         this.api = api;
         this.repo = repository;
@@ -43,44 +42,7 @@ public class ChangesClient {
     }
 
 
-
-//    public void get(ProjectDto project, int totalLimit, int sleep) throws InterruptedException {
-//        int mine = 0;
-//        int limit = 100;
-//        try {
-//            while (mine + limit <= totalLimit) {
-//                List<ChangeInfo> infos = api.changes().query("p:" + project.projectId)
-//                        .withStart(mine)
-//                        .withLimit(limit)
-//                        .withOptions(ListChangesOption.DETAILED_LABELS,
-//                                ListChangesOption.ALL_REVISIONS,
-//                                ListChangesOption.ALL_COMMITS,
-//                                ListChangesOption.ALL_FILES,
-//                                ListChangesOption.MESSAGES,
-//                                ListChangesOption.CURRENT_ACTIONS,
-//                                ListChangesOption.DETAILED_ACCOUNTS
-//
-//                        ).get();
-//
-//                if (infos == null || infos.size() <= 0) {
-//                    System.out.println("empty results  " + mine + " " + limit);
-//                    return;
-//                }
-//
-//
-//                for (ChangeInfo info : infos) {
-//                    saveChange(info);
-//                }
-//
-//                mine += limit;
-//            }
-//        } catch (RestApiException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-
-    private List<ChangeInfo> downloadChangeDetails(int number) {
+    public List<ChangeInfo> getChangeDetails(int number) {
         List<ChangeInfo> details = null;
         String query = Integer.toString(number);
         try {
@@ -118,7 +80,7 @@ public class ChangesClient {
         return details;
     }
 
-    private List<ChangeInfo> downloadChanges(String query, int start, int limit) {
+    public List<ChangeInfo> downloadChanges(String query, int start, int limit) {
         List<ChangeInfo> infos = null;
         try {
             logger.info(Logging.prepare("downloadChanges", query, Integer.toString(start), Integer.toString(limit)));
@@ -151,52 +113,16 @@ public class ChangesClient {
         return infos;
     }
 
-    public void get(String query, int start, int limit) throws InterruptedException {
-        logger.info(Logging.prepare("get", query, Integer.toString(start), Integer.toString(limit)));
-        List<ChangeInfo> infos;
-        try {
-            do {
-                infos = downloadChanges(query, start, limit);
-                if (infos.size() > 0) {
-                    int savedChanges = 0;
-                    for (ChangeInfo info : infos) {
 
-                        if (repo.containsChange(info._number)) {
-                            logger.info(Logging.prepareWithPart("get", "skipping " + Integer.toString(info._number)));
-                            continue;
-                        }
-
-                        List<ChangeInfo> details = downloadChangeDetails(info._number);
-
-                        for (ChangeInfo detail : details) {
-                            savedChanges += saveChange(detail) ? 1 : 0;
-                        }
-                    }
-
-                    int totalCount = Math.max(infos.size(), 1);
-                    logger.info(Logging.prepareWithPart("get", String.format("changes %d/%d (%f)", savedChanges, infos.size(), (float) savedChanges / totalCount)), start, limit);
-
-                    start += limit;
-                }
-
-            } while (infos.size() > 0);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
-    protected boolean saveChange(ChangeInfo info) throws RestApiException, InterruptedException {
+    public ChangeDto saveChange(ChangeInfo info) throws RestApiException, InterruptedException {
         logger.info(Logging.prepare("saveChange", Integer.toString(info._number)));
 
         if (repo.containsChange(info._number)) {
             logger.info(Logging.prepareWithPart("saveChange", "skipping ", Integer.toString(info._number)));
-            return false;
+            return null;
         }
         ProjectDto project = projects.getProject(Url.encode(info.project));
-        BranchDto branch = project.getBranch(info.branch);
+        BranchDto branch = projects.getBranch(project, info.branch);
         AccountDto owner = accounts.get(info.owner);
         ChangeDto change = new ChangeDto(info._number, project, branch, owner);
 
@@ -230,7 +156,7 @@ public class ChangesClient {
             patch.gitCommitId = entry.getKey();
             if (revision.commit == null) {
                 logger.info(Logging.prepareWithPart("saveChange", "Missing commit", Integer.toString(change.id)));
-                return false;
+                return null;
             }
 
             patch.subject = revision.commit.subject;
@@ -280,10 +206,11 @@ public class ChangesClient {
                 addPatchSetComments(change, patch, revisionComments);
 
 
-            }catch (com.urswolfer.gerrit.client.rest.http.HttpStatusException exception) {
-                logger.info(Logging.prepareWithPart("saveChange", "comments: no comments"));
-                exception.printStackTrace();
+            } catch (com.urswolfer.gerrit.client.rest.http.HttpStatusException exception) {
+                logger.info(Logging.prepareWithPart("saveChange", "comments: no comments", Integer.toString(info._number)), exception);
+
             } catch (Exception e) {
+                logger.error(Logging.prepare("saveChange", Integer.toString(info._number)), e);
                 e.printStackTrace();
             }
 
@@ -305,7 +232,11 @@ public class ChangesClient {
             info.labels.entrySet().stream()
                     .filter(e -> e.getValue() != null && e.getValue().all != null && e.getValue().all.size() > 0)
                     .forEach(e -> e.getValue().all.stream().filter(l -> l.date != null).map(l -> {
-                        Optional<CommentDto> comment = change.comments.stream().filter(m -> m.createdAt.equals(l.date) && m.author.accountId.equals(l._accountId)).findFirst();
+                        List<CommentDto> comments = change.comments.stream().filter(m -> m.createdAt.equals(l.date) && m.author.accountId.equals(l._accountId)).collect(Collectors.toList());
+                        Optional<CommentDto> comment = comments.stream().filter(c -> c.patchSet != null).findFirst();
+                        if (comment.isPresent() == false) {
+                            comment = comments.stream().findAny();
+                        }
                         if (comment.isPresent()) {
 
                             //noinspection PointlessBooleanExpression
@@ -337,7 +268,7 @@ public class ChangesClient {
 
         repo.addChange(change);
 
-        return true;
+        return change;
     }
 
     private void addPatchSetComments(ChangeDto change, PatchSetDto patch, Map<String, List<CommentInfo>> revisionComments) {

@@ -14,4 +14,8 @@ public interface IProjectsRepository extends IRepository {
     ApprovalTypeDto addApprovalType(ApprovalTypeDto approvalTypeDto);
 
     List<ProjectDto> getAllProjects();
+
+    List<BranchDto> getBranches(ProjectDto project);
+
+    void loadProjectBranches(ProjectDto project);
 }

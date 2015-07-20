@@ -21,6 +21,10 @@ public class Configuration {
     private int queryStart;
     private int queryLimit;
 
+    private String miningMode = "";
+    private int queryStop;
+    private int downloadAttemptsLimit;
+
     public final String getDatabaseConnectionString() {
         return databaseConnectionString;
     }
@@ -34,6 +38,10 @@ public class Configuration {
     }
 
     public final long getDownloadPause() { return downloadPause; }
+
+    public final String getMiningMode() { return miningMode; }
+
+    public final int getStop() { return queryStop; }
 
     private static final Logger logger;
 
@@ -74,6 +82,20 @@ public class Configuration {
             queryLimit = Integer.parseInt(limit);
         }
 
+        String mode = sm.lookupSymbol("MiningMode");
+        if (mode.isEmpty() == false) {
+            miningMode = mode.toLowerCase().trim();
+        }
+
+        String stop = sm.lookupSymbol("Stop");
+        if (stop.isEmpty() == false) {
+            queryStop = Integer.parseInt(stop);
+        }
+
+        String attemptsLimit = sm.lookupSymbol("DownloadAttemptsLimit");
+        if (attemptsLimit.isEmpty() == false) {
+            downloadAttemptsLimit = Integer.parseInt(attemptsLimit);
+        }
 
         log();
     }
@@ -90,6 +112,9 @@ public class Configuration {
         downloadPause = 5000;
         queryStart = 0;
         queryLimit = 20;
+        queryStop = 300000;
+        miningMode = "simple";
+        downloadAttemptsLimit = 3;
     }
 
     private void log() {
@@ -99,6 +124,10 @@ public class Configuration {
         logger.info(Logging.prepareWithPart("init", "DownloadPause: " + downloadPause));
         logger.info(Logging.prepareWithPart("init", "Start: " + queryStart));
         logger.info(Logging.prepareWithPart("init", "Limit: " + queryLimit));
+        logger.info(Logging.prepareWithPart("init", "Stop: " + queryStop));
+        logger.info(Logging.prepareWithPart("init", "MiningMode: " + miningMode));
+        logger.info(Logging.prepareWithPart("init", "DownloadAttemptsLimit: " + downloadAttemptsLimit));
+
     }
 
     public int getStart() {
@@ -108,4 +137,9 @@ public class Configuration {
     public int getLimit() {
         return queryLimit;
     }
+
+    public final int getDownloadAttemptsLimit() {
+        return downloadAttemptsLimit;
+    }
+
 }

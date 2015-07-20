@@ -29,7 +29,7 @@ public class Main {
         } catch (IndexOutOfBoundsException e) {
             System.err.println("Properties file expected but path not specified.");
         } catch (IllegalArgumentException e) {
-
+            System.err.println("Illegal argument.");
         }
         return false;
     }
@@ -42,7 +42,7 @@ public class Main {
         } catch (IndexOutOfBoundsException e) {
             System.err.println("Configuration file expected but path not specified.");
         } catch (IllegalArgumentException e) {
-
+            System.err.println("Illegal argument.");
         }
 
         return null;
@@ -89,7 +89,10 @@ public class Main {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
         }
+
 
     }
 
